@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Knockout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0,minimal-ui" id="viewport"/>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="assets/css/reset.css"/>
+    <link rel="stylesheet" href="assets/css/animate.css"/>
+    <link rel="stylesheet" href="assets/css/style.css"/>
+    <link rel="stylesheet" href="assets/css/alertify.core.css"/>
+    <link rel="stylesheet" href="assets/css/alertify.default.css"/>
+    <link rel="stylesheet" href="assets/css/hit.css"/>
+</head>
+<body>
+<div class="how-to-play" onclick="alertify.alert('1) add your name and create group <br>2) after creating group a url will be displayed which should be shared to opponent player <br>3) when opponent joins same group by adding name,both player are redirected to game stage <br> 4) As it is webrtc two player game,each user must allow their camera to capture events <br>5) swiping hands from left to right or vice versa near camera, punch events will be fired <br>6) each player must punch opponent to score more in 60 seconds <br>7) after 60 seconds player with highest punching score will be the winner ')">
+    HOW TO PLAY
+</div>
+<div class="wrapper">
+    <div id="content">
+        <form id="creategroup" method="get">
+            <div class="entries">
+                <input type="text" id="name" name="name" placeholder="enter your name" required="required" class="animated" data-animation="zoomIn" data-animation-delay="300"/>
+                <input type="text" id="group" name="group" placeholder="enter group name" required="required" class="animated" data-animation="zoomIn" data-animation-delay="600"/>
+                <button type="submit" class="animated" data-animation="zoomIn" data-animation-delay="900">Create Group</button>
+            </div>
+
+        </form>
+        <div class="container">
+            <div class="link animated"  data-animation="zoomIn" data-animation-delay="1200">
+                <p>SHARE THIS LINK FOR ANOTHER PLAYER</p>
+                <p>(You will be redirected to play area as soon as player 2 joins)</p>
+                <input type="text"  id="share"/>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="assets/js/lib/jquery.min.js"></script>
+<script type="text/javascript" src="assets/js/lib/parse-1.3.4.min.js"></script>
+<script type="text/javascript" src="assets/js/lib/jquery.appear.js"></script>
+<script src="assets/js/lib/firebase.js"></script>
+<script src="assets/js/lib/alertify.min.js"></script>
+<script type="text/javascript">
+    var myFirebaseRef = new Firebase("https://knockoutpunch.firebaseio.com/punchdata");
+    Parse.initialize("HX8Zu6A8j6jwkiXIULeyUtlVluvLIIsvHZ7Ajytg", "UOokK6B1wTXkkDuK2qTJxv5wyVNlWP5Zm2jRxImj");
+    $('#creategroup').submit(function(e){
+        var name=$('#name').val();
+        var group=$('#group').val();
+        var MultiGameApp = Parse.Object.extend("knockout");
+        var GameApp = new MultiGameApp();
+        GameApp.save({player1:name,group:group,player2:'',player1hit:'',player2hit:'',player1img:'',player2img:'',player1score:'',player2score:''},{
+            success: function(object) {
+                var id=object.id;
+                myFirebaseRef.push({
+                    objectid:id,
+                    player1hit:'',
+                    player2hit:'',
+                    joined:'',
+                    player1score:'0',
+                    player2score:'0'
+                });
+                myFirebaseRef.on('value',function(data){
+                    var arr = $.map(data.val(), function(el,w) { return w; });
+                    var arrlastval=arr[arr.length-1];
+                    $('.link #share').val('http://'+location.hostname+'/player2.html?id='+id+'&uid='+arrlastval);
+                    $('.link').css('visibility','visible');
+                    if(data.child(arrlastval).child('joined').val()){
+                        var GameUpdates = Parse.Object.extend("knockout");
+                        var query = new Parse.Query(GameUpdates);
+                        query.equalTo("objectId",id);
+                        query.find({
+                            success: function(results) {
+                                var object = results[0];
+                                if(object.get('player2')){
+                                    alertify.confirm(object.get('player2')+' joined',function(e){
+                                        if(e){
+                                            window.location.href='/hitplayer1.html?p1id='+id+'&uid='+arrlastval;
+                                        }
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                alert("Error: " + error.code + " " + error.message);
+                            }
+                        });
+                    }
+                });
+            },
+            error: function(model, error) {
+            }
+        });
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+
+    <title>Knock Out</title>
+    <meta name="description" content="My Parse App">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/animate.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/hit.css"/>
+    <link rel="stylesheet" href="assets/css/alertify.core.css"/>
+    <link rel="stylesheet" href="assets/css/alertify.default.css"/>
+</head>
+<body>
+<!--<header>-->
+    <!--<a href="#"><img src="assets/images/logo_neww.png"></a>-->
+<!--</header>-->
+<div class="how-to-play" onclick="alertify.alert(' 1)Join group by adding your name,after joining, both players are redirected to game stage <br> 2) As it is webrtc two player game,each user must allow their camera to capture events <br>3) swiping hands from left to right or vice versa near camera, punch events will be fired <br>4) each player must punch opponent to score more in 60 seconds <br>5) after 60 seconds player with highest punching score will be the winner ')">
+    HOW TO PLAY
+</div>
+<div class="wrapper">
+    <div id="content">
+        <form id="joingroup" method="get">
+            <input type="text" id="name" name="name" placeholder="enter your name" required="required"  class="animated" data-animation="zoomIn" data-animation-delay="300"/>
+            <input type="text" id="p1_name" name="p1_name"  required="required" disabled="disabled"  class="animated" data-animation="zoomIn" data-animation-delay="600"/>
+            <input type="text" id="group" name="group" required="required" disabled="disabled"  class="animated" data-animation="zoomIn" data-animation-delay="900"/>
+            <button type="submit" class="animated" data-animation="zoomIn" data-animation-delay="1200">JOIN GROUP</button>
+        </form>
+        <div class="container">
+            <div class="link">
+                <a href=""></a>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="assets/js/lib/jquery.min.js"></script>
+    <script type="text/javascript" src="assets/js/lib/parse-1.3.4.min.js"></script>
+    <script type="text/javascript" src="assets/js/lib/jquery.appear.js"></script>
+    <script src="assets/js/lib/alertify.min.js"></script>
+    <script src="assets/js/lib/firebase.js"></script>
+    <script type="text/javascript">
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+            return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+        var id=getParameterByName('id');
+        var uid=getParameterByName('uid');
+        Parse.initialize("HX8Zu6A8j6jwkiXIULeyUtlVluvLIIsvHZ7Ajytg", "UOokK6B1wTXkkDuK2qTJxv5wyVNlWP5Zm2jRxImj");
+        var GameUpdates = Parse.Object.extend("knockout");
+        var query = new Parse.Query(GameUpdates);
+        query.equalTo("objectId",id);
+        query.find({
+            success: function(results) {
+                for (var i = 0; i < results.length; i++) {
+                    var object = results[i];
+                    $('#group').val(object.get('group'));
+                    $('#p1_name').val(object.get('player1'));
+                }
+            },
+            error: function(error) {
+                alert("Error: " + error.code + " " + error.message);
+            }
+        });
+        var onComplete = function(error) {
+            if (error) {
+                console.log('Synchronization failed');
+            } else {
+                window.location.href='/hitplayer2.html?p2id='+id+'&uid='+uid;
+            }
+        };
+
+        $('#joingroup').submit(function(e){
+            var myFirebaseRef = new Firebase("https://knockoutpunch.firebaseio.com/punchdata/"+uid);
+            var name=$('#name').val();
+            var GameUpdates = Parse.Object.extend("knockout");
+            var query = new Parse.Query(GameUpdates);
+            query.equalTo("objectId",id);
+            query.find({
+                success: function(results) {
+                    var object = results[0];
+                    object.set('player2',name);
+                    object.save();
+                    myFirebaseRef.update({
+                        joined:'joined'
+                    },onComplete);
+                },
+                error: function(error) {
+                    alert("Error: " + error.code + " " + error.message);
+                }
+            });
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    </script>
+</body>

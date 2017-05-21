@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Knockout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0,minimal-ui" id="viewport"/>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="assets/css/bootstrap.min_3.css"/>
+    <link rel="stylesheet" href="assets/css/temper.css"/>
+    <script type="text/javascript" src="assets/js/lib/jquery.min.js"></script>
+    <script type="text/javascript" src="assets/js/lib/parse-1.3.4.min.js"></script>
+    <script type="text/javascript" src="assets/js/lib/ion.sound.min.js" ></script>
+    <link rel="stylesheet" href="assets/css/alertify.core.css"/>
+    <link rel="stylesheet" href="assets/css/alertify.default.css"/>
+    <link rel="stylesheet" href="assets/css/hit.css"/>
+</head>
+<body>
+<div class="loader">
+    <img src="assets/images/loader.gif" class="img-responsive" alt=""/>
+</div>
+<div class="total-wrapper container">
+    <div class="score-conatiner">
+        <div class="player-1 col-lg-4">
+            <span class="player1-name">YOU <span>: </span></span><span class="player1-score">0 </span><span> Punches</span>
+        </div>
+        <div class="timer-container col-lg-4 text-center">
+            <span class="timer-text">Remaining Time : </span></span><span class="timer">60</span><span> secs</span>
+        </div>
+        <div class="player-2 col-lg-4 text-right">
+            <span class="player2-name">DON <span> : </span></span><span class="player2-score">0</span><span> Punches</span>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-7 position">
+            <div class="main-image-container">
+                <img id="main-image" src="assets/images/boxer-still.png" class="img-responsive" alt=""/>
+            </div>
+            <div id="viewer2" class="face-conatiner"></div>
+            <div class="mark-face"></div>
+            <img class="blood-splash blood-splash-position1" src="assets/images/blppd_splash.png" alt=""/>
+            <img class="blood-splash blood-splash-position2" src="assets/images/blppd_splash.png" alt=""/>
+            <img class="blood-splash blood-splash-position3" src="assets/images/blppd_splash.png" alt=""/>
+            <img class="blood-splash blood-splash-position4" src="assets/images/blppd_splash.png" alt=""/>
+            <img class="blood-splash blood-splash-position5" src="assets/images/blppd_splash.png" alt=""/>
+            <div class="glouse-container">
+                <img id="hit-left" src="assets/images/left.png" alt=""/>
+                <img id="hit-right" src="assets/images/right.png" alt=""/>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="assets/js/lib/modernizr-2.6.2.js"></script>
+<script type="text/javascript" src="assets/js/lib/webcam-swiper-0.1.js"></script>
+<script type="text/javascript" src="assets/js/lib/firebase.js"></script>
+<script type="text/javascript" src="assets/js/lib/preload.js"></script>
+<script src="assets/js/lib/alertify.min.js"></script>
+<script type="text/javascript">
+    var allImages=[
+        "assets/images/boxer-still.png",
+        "assets/images/boxer-right.png",
+        "assets/images/boxer-left.png",
+        "assets/images/knockout.jpg",
+        "assets/images/blppd_splash.png",
+            "music/pain.mp3",
+            "music/punch.mp3"
+    ];
+    Parse.initialize("HX8Zu6A8j6jwkiXIULeyUtlVluvLIIsvHZ7Ajytg", "UOokK6B1wTXkkDuK2qTJxv5wyVNlWP5Zm2jRxImj");
+    $ = jQuery;
+    var rightGlove=$('#hit-right');
+    var leftGlove=$('#hit-left');
+    var mainImage=$('#main-image');
+    var viewerImage=$('#viewer2');
+    var transitions = {
+        'transition':'transitionend',
+        'OTransition':'oTransitionEnd',
+        'MSTransition':'msTransitionEnd',
+        'MozTransition':'transitionend',
+        'WebkitTransition':'webkitTransitionEnd'
+    };
+    window.transitionEvent = transitions[Modernizr.prefixed('transition')];
+    window.transitionStyle = Modernizr.prefixed('transition').replace(/([A-Z])/g, function(str,m1){ return '-' + m1.toLowerCase(); }).replace(/^ms-/,'-ms-');
+    window.transformStyle = Modernizr.prefixed('transform').replace(/([A-Z])/g, function(str,m1){ return '-' + m1.toLowerCase(); }).replace(/^ms-/,'-ms-');
+    $("body").bind("webcamSwipeLeft", hitFaceLeft);
+    $("body").bind("webcamSwipeRight", hitFaceRight);
+    function hitFaceLeft(){
+        hitFace(37);
+    }
+    function hitFaceRight(){
+        hitFace(39);
+    }
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+    var p2id=getParameterByName('p2id');
+    function returnRandomNumber(value){
+        return Math.floor(Math.random() * value) + 1;
+    }
+    var onComplete = function(error) {
+        if (error) {
+            console.log('Synchronization failed');
+        } else {
+            console.log('Synchronization succeeded');
+        }
+    };
+    var uid=getParameterByName('uid');
+    var myFirebaseRef =  new Firebase("https://knockoutpunch.firebaseio.com/punchdata/"+uid);
+    var secondfire =  new Firebase("https://knockoutpunch.firebaseio.com/joinplay/"+uid);
+        ion.sound({
+            path:'music/',
+            sounds:[{
+                name:"pain",
+                volume: 0.4
+
+            },
+                {
+                    name:"punch",
+                    volume: 0.8
+                }
+            ],
+            preload: true
+        });
+    function hitFace(val){
+        var player2score=parseInt($('.player1-score').html())+1;
+        if(parseInt(val)===37){
+            myFirebaseRef.update({
+                player1hit:'',
+                player2hit:'37',
+                player2score:player2score
+            },onComplete);
+            leftGlove.addClass('add-hit-left-class');
+            mainImage.addClass('add-class-main-image');
+            viewerImage.addClass('add-class-viewer');
+            setTimeout(function(){
+                mainImage.removeClass('add-class-main-image');
+                viewerImage.removeClass('add-class-viewer');
+            },200);
+            var randnumber=returnRandomNumber(5);
+            $('.blood-splash-position'+randnumber).show();
+            setTimeout(function(){
+                $('.blood-splash-position'+randnumber).hide();
+            },300);
+              ion.sound.play('punch');
+            revertBack(37);
+        }
+        if(parseInt(val)===39){
+            myFirebaseRef.update({
+                player1hit:'',
+                player2hit:'39',
+                player2score:player2score
+            },onComplete);
+            rightGlove.addClass('add-hit-right-class');
+            mainImage.addClass('add-class-main-image-right');
+            viewerImage.addClass('add-class-right-viewer');
+            setTimeout(function(){
+                mainImage.removeClass('add-class-main-image-right');
+                viewerImage.removeClass('add-class-right-viewer');
+            },200);
+            var randnumber=returnRandomNumber(5);
+            $('.blood-splash-position'+randnumber).show();
+            setTimeout(function(){
+                $('.blood-splash-position'+randnumber).hide();
+            },300);
+              ion.sound.play('punch');
+            revertBack(39);
+        }
+    }
+    function revertBack(revert){
+        if(parseInt(revert)===37){
+            setTimeout(function(){
+                ion.sound.play('pain',{
+                    volume:0.4
+                });
+                leftGlove.removeClass('add-hit-left-class');
+            },300);
+        }
+        else if(parseInt(revert)===39){
+            setTimeout(function(){
+                ion.sound.play('pain',{
+                    volume:0.4
+                });
+                rightGlove.removeClass('add-hit-right-class');
+            },300);
+        }
+    }
+    var time_count=60;
+    var timeSet=function(){
+        time_count--;
+        if(time_count>0){
+            var clearTimer=setTimeout(function(){
+                $('.timer').html(time_count);
+                timeSet();
+            },1000);
+        }
+        else{
+            var you=parseInt($('.player1-score').html());
+            var player2=parseInt($('.player2-score').html());
+            if(you>player2) {
+                window.destroyWebcamSwiper();
+                alertify.confirm('Congrats you won by punching '+you+' times',function(e){
+                    window.location.href='result.html?oid='+p2id+'&res=1&pl=2';
+                });
+            }
+            else if(you<player2){
+                window.destroyWebcamSwiper();
+                alertify.confirm('Sorry you lost by getting punched '+player2+' times',function(e){
+                    window.location.href='result.html?oid='+p2id+'&res=0&pl=2';
+                });
+            }
+            else{
+                window.destroyWebcamSwiper();
+                alertify.confirm('TIES',function(e){
+                    window.location.href='index.html';
+                });
+            }
+            secondfire.update({
+                player1joined:0,
+                player2joined:0
+            },onComplete);
+        }
+    }
+    $(document).ready(function(){
+        $.preload(allImages,1,function(last){
+            $('.total-wrapper').show(100,function(){
+                $('.loader').hide();
+            });
+        });
+        myFirebaseRef.update({
+            player1hit:'',
+            player2hit:'',
+            player2score:'0'
+        },onComplete);
+        var GameUpdates = Parse.Object.extend("knockout");
+        var query = new Parse.Query(GameUpdates);
+        query.equalTo("objectId",p2id);
+        query.find({
+            success: function(results) {
+                var object = results[0];
+                if(object)
+                    $('.player2-name').html(object.attributes.player1+' : ');
+                else
+                    window.location.href='nogroup.html';
+            },
+            error: function(error) {
+                alert("Error: " + error.code + " " + error.message);
+            }
+        });
+        secondfire.update({
+            player2joined:1
+        },onComplete);
+        secondfire.on('value',function(data){
+            var valdata=data.val();
+            if(valdata.player1joined){
+                timeSet();
+            }
+        });
+        myFirebaseRef.on('value',function(data){
+            var valdata=data.val();
+            $('.player1-score').html(valdata.player2score);
+            $('.player2-score').html(valdata.player1score);
+            var arryObjectIds= $.map(valdata,function(element,index){
+                return index;
+            });
+            var arrayLastVal=arryObjectIds[arryObjectIds.length-1];
+            if(data.val().player1hit=='37'){
+                mainImage.attr('src','assets/images/boxer-left.png');
+            }
+            else if(data.val().player1hit=='39'){
+                mainImage.attr('src','assets/images/boxer-right.png');
+            }
+            setTimeout(function(){
+                mainImage.attr('src','assets/images/boxer-still.png');
+            },500);
+        });
+    });
+    window.initializeWebcamSwiper();
+</script>
+</body>
+</html>
